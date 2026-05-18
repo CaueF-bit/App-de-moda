@@ -22,6 +22,10 @@ import devRoutes from "./api/dev.routes";
 export function createServer() {
   const app = express();
 
+  // Atrás do proxy da Vercel: confia no primeiro hop para que o
+  // express-rate-limit leia o IP real do header X-Forwarded-For.
+  app.set("trust proxy", 1);
+
   // --- Middlewares globais ---
   app.use(securityHeaders);
   app.use(corsMiddleware);
