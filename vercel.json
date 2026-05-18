@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "npx prisma generate && npx prisma db push --skip-generate --accept-data-loss",
   "functions": {
     "api/index.ts": {
