@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <!-- ============ LOGIN ============ -->
+  <!-- ============ LOGIN / CADASTRO ============ -->
   <section id="login-screen" class="screen">
     <div class="card login-card">
       <span class="card-index">Nº 01</span>
@@ -26,7 +26,8 @@
         <p class="subtitle">Seu stylist pessoal, guiado por inteligência artificial.</p>
       </div>
 
-      <div class="form">
+      <!-- Entrar -->
+      <div id="login-view" class="form">
         <label>Email</label>
         <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" />
 
@@ -36,7 +37,29 @@
         <button id="btn-login" class="btn-primary">Entrar</button>
         <button id="btn-demo" class="btn-secondary">Usar conta demo</button>
 
-        <p class="hint">A conta demo já vem com um guarda-roupa pronto para explorar.</p>
+        <p class="switch-line">
+          Ainda não tem conta?
+          <button type="button" id="to-register" class="link-btn">Criar conta</button>
+        </p>
+      </div>
+
+      <!-- Criar conta -->
+      <div id="register-view" class="form hidden">
+        <label>Nome</label>
+        <input id="reg-name" type="text" placeholder="Seu nome" autocomplete="name" />
+
+        <label>Email</label>
+        <input id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email" />
+
+        <label>Senha</label>
+        <input id="reg-password" type="password" placeholder="mínimo 8 caracteres" autocomplete="new-password" />
+
+        <button id="btn-register" class="btn-primary">Criar conta</button>
+
+        <p class="switch-line">
+          Já tem uma conta?
+          <button type="button" id="to-login" class="link-btn">Entrar</button>
+        </p>
       </div>
 
       <div id="login-error" class="error hidden"></div>

@@ -170,13 +170,17 @@ const seedWardrobe: WardrobeItem[] = [
   },
 ];
 
-export async function bootstrapMockData(): Promise<{
+/**
+ * Cria/atualiza a conta demo + perfil + guarda-roupa.
+ *
+ * NÃO é destrutivo: usa upsert, então não apaga nenhum outro usuário.
+ * Seguro de rodar em produção (ex.: prisma/seed.ts).
+ */
+export async function seedDemoData(): Promise<{
   userId: string;
   email: string;
   wardrobeCount: number;
 }> {
-  await resetMockData();
-
   // 1. Cria o User (necessário pra UserProfile via FK)
   const passwordHash = await hashPassword(DEFAULT_SEED_PASSWORD);
   await prisma.user.upsert({
@@ -207,6 +211,19 @@ export async function bootstrapMockData(): Promise<{
     email: DEFAULT_SEED_EMAIL,
     wardrobeCount: seedWardrobe.length,
   };
+}
+
+/**
+ * Reset COMPLETO + seed. Destrutivo — apaga TODOS os dados antes.
+ * Usado só no dev local (src/index.ts).
+ */
+export async function bootstrapMockData(): Promise<{
+  userId: string;
+  email: string;
+  wardrobeCount: number;
+}> {
+  await resetMockData();
+  return seedDemoData();
 }
 
 export async function resetMockData(): Promise<void> {

@@ -322,6 +322,33 @@ button {
   font-family: var(--serif);
 }
 
+.switch-line {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.link-btn {
+  display: inline;
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--gold-deep);
+  border-bottom: 1px solid var(--gold);
+}
+
+.link-btn:hover {
+  color: var(--ink);
+}
+
 /* ===== Erro ===== */
 .error {
   background: rgba(111, 47, 44, 0.08);

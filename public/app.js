@@ -66,12 +66,40 @@ async function login(email, password) {
   }
 }
 
+async function register(name, email, password) {
+  try {
+    const data = await api("/auth/register", {
+      method: "POST",
+      body: { name, email, password },
+    });
+    state.token = data.token;
+    state.userId = data.id;
+    state.userName = data.name;
+    enterApp();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// Alterna entre as telas de "Entrar" e "Criar conta".
+function showAuthView(view) {
+  if (view === "register") {
+    hide($("login-view"));
+    show($("register-view"));
+  } else {
+    hide($("register-view"));
+    show($("login-view"));
+  }
+  hide($("login-error"));
+}
+
 function logout() {
   state.token = null;
   state.userId = null;
   state.userName = null;
   hide($("app-screen"));
   show($("login-screen"));
+  showAuthView("login");
   $("email").value = "";
   $("password").value = "";
   $("outfit-result").innerHTML = "";
@@ -404,6 +432,29 @@ document.addEventListener("DOMContentLoaded", () => {
     $("email").value = "demo@app-de-moda.dev";
     $("password").value = "demo12345";
     login("demo@app-de-moda.dev", "demo12345");
+  });
+
+  // Alternar entre Entrar e Criar conta
+  $("to-register").addEventListener("click", () => showAuthView("register"));
+  $("to-login").addEventListener("click", () => showAuthView("login"));
+
+  $("btn-register").addEventListener("click", () => {
+    const name = $("reg-name").value.trim();
+    const email = $("reg-email").value.trim();
+    const password = $("reg-password").value;
+    if (!name || !email || !password) {
+      showError("Preencha nome, email e senha.");
+      return;
+    }
+    if (password.length < 8) {
+      showError("A senha precisa ter no mínimo 8 caracteres.");
+      return;
+    }
+    register(name, email, password);
+  });
+
+  $("reg-password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") $("btn-register").click();
   });
 
   $("btn-logout").addEventListener("click", logout);

@@ -4,9 +4,11 @@ import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
 import { requestLogger } from "./config/logger";
 import { openapiSpec } from "./config/openapi";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { asyncHandler, errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { apiRateLimit, corsMiddleware, securityHeaders } from "./middleware/security";
 import { authenticate } from "./middleware/authenticate";
+import { UnauthorizedError } from "./errors/AppError";
+import { seedDemoData } from "./dev/mockData";
 
 import authRoutes from "./api/auth.routes";
 import outfitRoutes from "./api/outfit.routes";
@@ -85,6 +87,19 @@ export function createServer() {
 
   // --- Auth (público) ---
   app.use("/auth", authRoutes);
+
+  // --- Seed da conta demo (protegido por chave; idempotente / não-destrutivo) ---
+  // Fica fora de "/api" para não passar pelo middleware authenticate.
+  app.post(
+    "/seed-demo",
+    asyncHandler(async (req, res) => {
+      if (req.query.key !== env.JWT_SECRET) {
+        throw new UnauthorizedError("Chave inválida.");
+      }
+      const result = await seedDemoData();
+      return res.status(200).json({ ok: true, ...result });
+    }),
+  );
 
   // --- API protegida (autenticação aplicada em cada router separado) ---
   app.use("/api", authenticate);
