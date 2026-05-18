@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npx prisma generate && npx prisma db push --skip-generate --accept-data-loss",
+  "functions": {
+    "api/server.ts": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/server" }
+  ]
+}

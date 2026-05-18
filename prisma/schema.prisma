@@ -2,24 +2,25 @@
 //  Schema do banco
 // =========================================================================
 //
-//  DEV (atual)    → SQLite. Não precisa instalar nada.
-//  PROD (deploy)  → PostgreSQL.
+//  PROD (Vercel) → PostgreSQL hospedado (Neon / Vercel Postgres).
+//  DEV local     → também PostgreSQL. Para usar SQLite no dev, troque o
+//                  provider para "sqlite" temporariamente (não commitar).
 //
-//  Pra fazer deploy:
-//    1. Troque provider abaixo de "sqlite" pra "postgresql"
-//    2. Configure DATABASE_URL com a URL do Postgres do Railway/Render
-//    3. Rode: npx prisma migrate deploy
+//  DATABASE_URL é configurada nas Environment Variables da Vercel.
+//  Use sempre a connection string COM POOLING (serverless abre muitas
+//  conexões — sem pooling o Postgres esgota o limite).
 //
-//  No Railway, quando você adiciona o plugin de Postgres, ele já injeta
-//  a variável DATABASE_URL automaticamente no seu serviço.
+//  binaryTargets inclui o runtime da Vercel (Amazon Linux / OpenSSL 3)
+//  além do "native" para rodar local.
 // =========================================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
