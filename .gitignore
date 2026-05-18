@@ -1,0 +1,41 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Banco de dados local
+prisma/*.db
+prisma/*.db-journal
+*.db
+*.db-journal
+
+# Configuração local do Claude Code
+.claude/settings.local.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+.nyc_output/

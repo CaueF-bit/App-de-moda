@@ -1,0 +1,116 @@
+// =========================================================================
+//  Schema do banco
+// =========================================================================
+//
+//  DEV (atual)    → SQLite. Não precisa instalar nada.
+//  PROD (deploy)  → PostgreSQL.
+//
+//  Pra fazer deploy:
+//    1. Troque provider abaixo de "sqlite" pra "postgresql"
+//    2. Configure DATABASE_URL com a URL do Postgres do Railway/Render
+//    3. Rode: npx prisma migrate deploy
+//
+//  No Railway, quando você adiciona o plugin de Postgres, ele já injeta
+//  a variável DATABASE_URL automaticamente no seu serviço.
+// =========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Usuário da plataforma — tabela usada pela autenticação.
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  profile       UserProfile?
+  wardrobe      WardrobeItem[]
+  outfits       Outfit[]
+  preferences   Preference?
+}
+
+/// Perfil estendido do usuário (medidas, paleta, preferências de estilo).
+model UserProfile {
+  userId               String   @id
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bodyType             String
+  preferredFits        String   // JSON: string[]
+  measurements         String   // JSON: UserMeasurements
+  personalPalette      String   // JSON: PersonalColorPalette
+  dislikedPatterns     String?  // JSON: string[]
+  favoriteCategories   String?  // JSON: ClothingCategory[]
+  fragrancePreferences String?  // JSON: string[]
+  budgetLimit          Float    @default(0)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+/// Peça do guarda-roupa.
+model WardrobeItem {
+  id              String   @id
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  imageUrl        String
+  category        String
+  layer           String?
+  subcategory     String?
+  color           String
+  secondaryColor  String?
+  pattern         String?
+  brand           String?
+  fabric          String?
+  idealSeason     String?  // JSON: SeasonType[]
+  fit             String?
+  formality       String?
+  tags            String?  // JSON: StyleTag[]
+  confidence      Float?
+  isConfirmed     Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// Outfit salvo (gerado pela recomendação + feedback).
+model Outfit {
+  id            String   @id
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title         String
+  reasoning     String
+  occasion      String?
+  score         Float    @default(0)
+  payload       String   // JSON: OutfitSuggestion completo (upper, lower, shoes, etc.)
+  feedback      String?  // "like" | "dislike"
+  feedbackTags  String?  // JSON: string[]
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Pesos de preferência aprendidos com o feedback do usuário.
+model Preference {
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  favoriteColors      String   @default("{}")  // JSON: Record<string, number>
+  favoriteCategories  String   @default("{}")  // JSON: Record<ClothingCategory, number>
+  favoriteOccasions   String   @default("{}")  // JSON: Record<string, number>
+
+  updatedAt           DateTime @updatedAt
+}

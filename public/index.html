@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a160e" />
+  <meta name="description" content="Atelier — seu stylist pessoal guiado por inteligência artificial." />
+  <title>App de Moda · Atelier de estilo com IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap"
+  />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- ============ LOGIN ============ -->
+  <section id="login-screen" class="screen">
+    <div class="card login-card">
+      <span class="card-index">Nº 01</span>
+
+      <div class="masthead">
+        <span class="eyebrow">Atelier · Est. 2026</span>
+        <h1>App de <em>Moda</em></h1>
+        <p class="subtitle">Seu stylist pessoal, guiado por inteligência artificial.</p>
+      </div>
+
+      <div class="form">
+        <label>Email</label>
+        <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+
+        <label>Senha</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+        <button id="btn-login" class="btn-primary">Entrar</button>
+        <button id="btn-demo" class="btn-secondary">Usar conta demo</button>
+
+        <p class="hint">A conta demo já vem com um guarda-roupa pronto para explorar.</p>
+      </div>
+
+      <div id="login-error" class="error hidden"></div>
+    </div>
+  </section>
+
+  <!-- ============ APP ============ -->
+  <section id="app-screen" class="screen hidden">
+    <header class="topbar">
+      <div class="topbar-text">
+        <span class="eyebrow">Atelier · O guarda-roupa</span>
+        <h2>Olá, <span id="user-name"></span></h2>
+        <p class="muted">O que vamos criar hoje?</p>
+      </div>
+      <button id="btn-logout" class="btn-ghost">Sair</button>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="outfit">Gerar look</button>
+      <button class="tab" data-tab="packing">Mala de viagem</button>
+      <button class="tab" data-tab="wardrobe">Guarda-roupa</button>
+    </div>
+
+    <!-- TAB: Gerar look -->
+    <div id="tab-outfit" class="tab-content">
+      <div class="card">
+        <h3>Que look vamos criar?</h3>
+        <div class="form">
+          <label>Ocasião</label>
+          <select id="occasion">
+            <option value="jantar">Jantar</option>
+            <option value="trabalho">Trabalho</option>
+            <option value="balada elegante">Balada elegante</option>
+            <option value="casamento">Casamento</option>
+            <option value="casual">Dia casual</option>
+          </select>
+
+          <label>Clima</label>
+          <select id="weather">
+            <option value="quente">Quente</option>
+            <option value="ameno" selected>Ameno</option>
+            <option value="frio">Frio</option>
+            <option value="chuvoso">Chuvoso</option>
+          </select>
+
+          <label>Vibe (opcional)</label>
+          <input id="vibe" type="text" placeholder="ex: elegante minimalista" />
+
+          <button id="btn-generate" class="btn-primary">Gerar meu look</button>
+        </div>
+      </div>
+
+      <div id="outfit-loading" class="loading hidden">Compondo o seu look</div>
+      <div id="outfit-result" class="hidden"></div>
+    </div>
+
+    <!-- TAB: Mala -->
+    <div id="tab-packing" class="tab-content hidden">
+      <div class="card">
+        <h3>Para onde você viaja?</h3>
+        <div class="form">
+          <label>Destino</label>
+          <input id="destination" type="text" placeholder="São Paulo" />
+
+          <label>Quantos dias?</label>
+          <input id="duration" type="number" min="1" max="60" value="4" />
+
+          <label>Clima esperado</label>
+          <select id="packing-weather">
+            <option value="quente">Quente</option>
+            <option value="ameno" selected>Ameno</option>
+            <option value="frio">Frio</option>
+            <option value="chuvoso">Chuvoso</option>
+          </select>
+
+          <label>Ocasiões planejadas (separe por vírgula)</label>
+          <input id="occasions" type="text" placeholder="trabalho, jantar" />
+
+          <button id="btn-packing" class="btn-primary">Montar a mala</button>
+        </div>
+      </div>
+
+      <div id="packing-loading" class="loading hidden">Montando a sua mala</div>
+      <div id="packing-result" class="hidden"></div>
+    </div>
+
+    <!-- TAB: Guarda-roupa -->
+    <div id="tab-wardrobe" class="tab-content hidden">
+      <div class="card">
+        <h3>Suas peças</h3>
+        <p class="muted">Tudo o que está no seu guarda-roupa digital.</p>
+        <button id="btn-refresh-wardrobe" class="btn-secondary">Atualizar</button>
+      </div>
+      <div id="wardrobe-list"></div>
+    </div>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# =============================================================================
+# Stack de desenvolvimento:
+#   - api: a aplicação (SQLite no volume nomeado por padrão)
+#   - postgres: serviço opcional pra quando você quiser migrar de SQLite
+#     (para usar, defina DATABASE_URL=postgres://app:app@postgres:5432/app)
+# =============================================================================
+
+services:
+  api:
+    build: .
+    container_name: app-de-moda-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LOG_LEVEL: info
+      DATABASE_URL: file:./prisma/dev.db
+      JWT_SECRET: ${JWT_SECRET:-troque-esse-segredo-em-producao-32-caracteres}
+      JWT_EXPIRES_IN: 7d
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    volumes:
+      # Persiste o SQLite em volume nomeado
+      - sqlite_data:/app/prisma
+
+  # Descomente para Postgres em produção
+  # postgres:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: app
+  #     POSTGRES_PASSWORD: app
+  #     POSTGRES_DB: app
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  sqlite_data:
+  # postgres_data:
