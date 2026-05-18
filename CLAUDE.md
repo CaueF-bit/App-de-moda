@@ -22,17 +22,28 @@ arquitetura deve mirar deploy na Vercel:
 > O arquivo `DEPLOY.md` descreve um plano antigo para Railway — está obsoleto.
 > A fonte de verdade para deploy é a Vercel.
 
-## ⚠️ GitHub: SEMPRE manter atualizado
+## ⚠️ GitHub + Vercel: SEMPRE atualizar após cada mudança
 
-Após qualquer mudança no código, **commitar e dar push** para o repositório
-`https://github.com/CaueF-bit/App-de-moda` (branch `main`):
+**Sempre que o usuário pedir algo novo ou uma alteração**, depois de implementar:
 
-```
-git add -A && git commit -m "<descrição>" && git push
-```
+1. Commitar e dar push para `https://github.com/CaueF-bit/App-de-moda` (branch `main`):
+   ```
+   git add -A && git commit -m "<descrição>" && git push
+   ```
+2. O push na `main` dispara o **deploy automático na Vercel**.
+3. Verificar que o deploy ficou `Ready` (ex.: `vercel ls app-de-moda`) e que o
+   site responde — não considerar a tarefa concluída até o deploy passar.
 
-A Vercel faz deploy automático a cada push na `main`, então manter o GitHub
-atualizado é o que dispara o deploy.
+Isto não é opcional: cada feature/correção termina com GitHub e Vercel atualizados.
+
+## Configuração de deploy na Vercel (não quebrar)
+
+- `vercel.json` usa `"framework": null` — **não remover**. O preset "express" da
+  Vercel cria funções fantasma e quebra o deploy.
+- Há **uma única função**: `api/index.ts`, que recebe todo o tráfego via o
+  rewrite `/(.*) -> /api`. O `public/` é embutido nela via `includeFiles`.
+- Banco: Postgres (Neon) já provisionado; `DATABASE_URL` e `JWT_SECRET` estão
+  nas Environment Variables da Vercel.
 
 ## Stack
 
