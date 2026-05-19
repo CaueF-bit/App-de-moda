@@ -710,3 +710,85 @@ button {
   }
   .loading::before { animation: spin 0.8s linear infinite !important; }
 }
+
+/* ===== Guarda-roupa — cadastro por foto ===== */
+.wardrobe-preview-box {
+  margin: 6px 0 4px;
+}
+
+.wardrobe-preview {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  background: var(--paper-hi);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 8px;
+}
+
+.wardrobe-msg {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--linen);
+  border: 1px solid var(--line-soft);
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.wardrobe-msg.error {
+  background: rgba(111, 47, 44, 0.08);
+  border-color: var(--wine);
+  color: var(--wine);
+}
+
+.wardrobe-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.wardrobe-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--paper-hi);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.wardrobe-item:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-sm);
+}
+
+.wardrobe-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  background: var(--linen);
+}
+
+.wardrobe-item-body {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.wardrobe-del {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  padding: 6px 12px;
+}
+
+input[type="file"] {
+  font-family: var(--sans);
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}

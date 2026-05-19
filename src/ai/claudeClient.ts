@@ -30,6 +30,14 @@ export function isAiAvailable(): boolean {
   return env.AI_ENABLED && env.ANTHROPIC_API_KEY.length > 0;
 }
 
+/**
+ * Expõe o cliente Anthropic (singleton) para outros módulos de IA —
+ * ex.: análise de fotos em `clothingVision.ts`.
+ */
+export function getAnthropicClient(): Anthropic {
+  return getClient();
+}
+
 interface AiOutfitResponse {
   title: string;
   reasoning: string;

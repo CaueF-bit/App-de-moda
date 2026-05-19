@@ -57,3 +57,62 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+// ---------------------------------------------------------------------------
+//  Guarda-roupa — cadastro de peças por foto
+// ---------------------------------------------------------------------------
+
+export const clothingCategorySchema = z.enum([
+  "camiseta",
+  "camisa",
+  "jaqueta",
+  "blazer",
+  "calca",
+  "bermuda",
+  "shorts",
+  "tenis",
+  "sapato",
+  "bota",
+  "acessorio",
+  "perfume",
+  "outro",
+]);
+
+export const fitSchema = z.enum(["slim", "regular", "oversized", "tailored"]);
+export const formalitySchema = z.enum(["casual", "smart_casual", "social", "elegante"]);
+
+/** Campos editáveis de uma peça (usados em overrides e na edição). */
+const wardrobeAttributesShape = {
+  category: clothingCategorySchema.optional(),
+  subcategory: z.string().trim().min(1).max(120).optional(),
+  color: z.string().trim().min(1).max(40).optional(),
+  secondaryColor: z.string().trim().min(1).max(40).optional(),
+  pattern: z.string().trim().min(1).max(40).optional(),
+  fabric: z.string().trim().min(1).max(40).optional(),
+  brand: z.string().trim().min(1).max(80).optional(),
+  fit: fitSchema.optional(),
+  formality: formalitySchema.optional(),
+};
+
+export const registerWardrobeSchema = z.object({
+  // data URL base64 de uma imagem (jpeg/png/webp/gif).
+  image: z
+    .string()
+    .trim()
+    .min(1, "A foto da peça é obrigatória")
+    .regex(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i, "Formato de imagem inválido"),
+  ...wardrobeAttributesShape,
+});
+
+export type RegisterWardrobeInput = z.infer<typeof registerWardrobeSchema>;
+
+export const updateWardrobeSchema = z
+  .object({
+    ...wardrobeAttributesShape,
+    isConfirmed: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Informe ao menos um campo para atualizar.",
+  });
+
+export type UpdateWardrobeInput = z.infer<typeof updateWardrobeSchema>;

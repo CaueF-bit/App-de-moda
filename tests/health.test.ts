@@ -13,11 +13,13 @@ describe("GET /health", () => {
   });
 });
 
-describe("GET / (root)", () => {
+describe("GET /api/info", () => {
   const app = createServer();
 
   it("retorna info da API", async () => {
-    const res = await request(app).get("/");
+    // A raiz "/" agora serve a página web (public/index.html);
+    // o JSON informativo da API ficou em /api/info.
+    const res = await request(app).get("/api/info");
     expect(res.status).toBe(200);
     expect(res.body.name).toBe("app-de-moda-api");
   });

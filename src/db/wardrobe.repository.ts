@@ -106,3 +106,13 @@ export async function listWardrobeItemsByUser(userId: string): Promise<WardrobeI
 export async function clearWardrobeItems(): Promise<void> {
   await prisma.wardrobeItem.deleteMany();
 }
+
+/**
+ * Remove uma peça específica do guarda-roupa de um usuário.
+ * O filtro por `userId` garante que ninguém apague a peça de outra pessoa.
+ * Retorna `true` se algo foi de fato removido.
+ */
+export async function deleteWardrobeItem(id: string, userId: string): Promise<boolean> {
+  const result = await prisma.wardrobeItem.deleteMany({ where: { id, userId } });
+  return result.count > 0;
+}

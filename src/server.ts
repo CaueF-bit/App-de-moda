@@ -14,6 +14,7 @@ import authRoutes from "./api/auth.routes";
 import outfitRoutes from "./api/outfit.routes";
 import feedbackRoutes from "./api/feedback.routes";
 import packingRoutes from "./api/packing.routes";
+import wardrobeRoutes from "./api/wardrobe.routes";
 import devRoutes from "./api/dev.routes";
 
 /**
@@ -31,7 +32,10 @@ export function createServer() {
   // --- Middlewares globais ---
   app.use(securityHeaders);
   app.use(corsMiddleware);
-  app.use(express.json({ limit: "1mb" }));
+  // Limite generoso: o cadastro de peças envia a foto em base64 no corpo.
+  // O frontend já redimensiona a imagem, então fica bem abaixo desse teto
+  // (e dentro do limite de corpo de requisição da Vercel, ~4.5MB).
+  app.use(express.json({ limit: "6mb" }));
   app.use(requestLogger);
   app.use(apiRateLimit);
 
@@ -59,6 +63,10 @@ export function createServer() {
           feedback: "POST /api/feedback (autenticado)",
           feedbackPreview: "POST /api/feedback/preview (autenticado)",
           packing: "POST /api/packing (autenticado)",
+          wardrobeList: "GET /api/wardrobe (autenticado)",
+          wardrobeAdd: "POST /api/wardrobe (autenticado)",
+          wardrobeUpdate: "PATCH /api/wardrobe/:id (autenticado)",
+          wardrobeDelete: "DELETE /api/wardrobe/:id (autenticado)",
         },
         dev: env.NODE_ENV === "development" ? "/api/dev/*" : undefined,
       },
@@ -106,6 +114,7 @@ export function createServer() {
   app.use("/api", outfitRoutes);
   app.use("/api", feedbackRoutes);
   app.use("/api", packingRoutes);
+  app.use("/api", wardrobeRoutes);
 
   // --- Rotas de seed/reset só em dev ---
   if (env.NODE_ENV !== "production") {

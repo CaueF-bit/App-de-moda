@@ -149,6 +149,25 @@
     <!-- TAB: Guarda-roupa -->
     <div id="tab-wardrobe" class="tab-content hidden">
       <div class="card">
+        <h3>Cadastrar peça</h3>
+        <p class="muted">Envie uma foto da peça — a IA identifica categoria, cor e tecido pra você.</p>
+        <div class="form">
+          <label>Foto da peça</label>
+          <input id="wardrobe-photo" type="file" accept="image/*" />
+
+          <div id="wardrobe-preview-box" class="wardrobe-preview-box hidden">
+            <img id="wardrobe-preview" class="wardrobe-preview" alt="Pré-visualização da peça" />
+          </div>
+
+          <button id="btn-add-wardrobe" class="btn-primary" disabled>
+            Cadastrar peça
+          </button>
+        </div>
+        <div id="wardrobe-add-loading" class="loading hidden">Analisando a foto com IA</div>
+        <div id="wardrobe-add-msg" class="wardrobe-msg hidden"></div>
+      </div>
+
+      <div class="card">
         <h3>Suas peças</h3>
         <p class="muted">Tudo o que está no seu guarda-roupa digital.</p>
         <button id="btn-refresh-wardrobe" class="btn-secondary">Atualizar</button>

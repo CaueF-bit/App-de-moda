@@ -7,6 +7,7 @@ const state = {
   token: null,
   userId: null,
   userName: null,
+  pendingPhoto: null,
 };
 
 // ---------------------- Helpers ----------------------
@@ -337,61 +338,147 @@ function renderPacking(packing) {
 }
 
 // ---------------------- Wardrobe ----------------------
+// Redimensiona a foto no próprio navegador antes de enviar — mantém o upload
+// leve e o banco enxuto (a imagem é guardada em base64).
+function resizeImage(file, maxSize = 1024, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const scale = maxSize / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function showWardrobeMsg(message, isError) {
+  const el = $("wardrobe-add-msg");
+  el.textContent = message;
+  el.classList.toggle("error", !!isError);
+  show(el);
+}
+
+async function handlePhotoSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  const btn = $("btn-add-wardrobe");
+  const box = $("wardrobe-preview-box");
+  hide($("wardrobe-add-msg"));
+
+  if (!file) {
+    state.pendingPhoto = null;
+    btn.disabled = true;
+    hide(box);
+    return;
+  }
+  try {
+    const dataUrl = await resizeImage(file);
+    state.pendingPhoto = dataUrl;
+    $("wardrobe-preview").src = dataUrl;
+    show(box);
+    btn.disabled = false;
+  } catch (err) {
+    state.pendingPhoto = null;
+    btn.disabled = true;
+    hide(box);
+    showWardrobeMsg(err.message, true);
+  }
+}
+
+async function addWardrobeItem() {
+  if (!state.pendingPhoto) return;
+  const btn = $("btn-add-wardrobe");
+  btn.disabled = true;
+  hide($("wardrobe-add-msg"));
+  show($("wardrobe-add-loading"));
+
+  try {
+    const result = await api("/api/wardrobe", {
+      method: "POST",
+      body: { image: state.pendingPhoto },
+    });
+    const item = result.item || {};
+    const detected = item.subcategory || item.category || "peça";
+    const msg = result.aiUsed
+      ? `Peça cadastrada: ${detected} (${item.color}). A IA analisou a foto. ✦`
+      : `Peça cadastrada. ${(result.warnings || []).join(" ")}`;
+    showWardrobeMsg(msg, false);
+
+    // limpa o formulário
+    state.pendingPhoto = null;
+    $("wardrobe-photo").value = "";
+    hide($("wardrobe-preview-box"));
+    loadWardrobe();
+  } catch (err) {
+    showWardrobeMsg(err.message, true);
+    btn.disabled = false;
+  } finally {
+    hide($("wardrobe-add-loading"));
+  }
+}
+
 async function loadWardrobe() {
   const container = $("wardrobe-list");
   container.innerHTML = "<div class='loading'>Carregando...</div>";
   try {
-    // Não temos endpoint de listar wardrobe ainda; chamamos via dev/examples como hack
-    // Aqui só mostramos o guarda-roupa via /api/outfit pra exibir as peças
-    const data = await api("/api/outfit", {
-      method: "POST",
-      body: {
-        userId: state.userId,
-        occasion: "casual",
-        weather: "ameno",
-      },
-    });
-    const outfit = data[0];
-    const all = [
-      outfit.upper,
-      outfit.lower,
-      outfit.layer,
-      outfit.shoes,
-      ...(outfit.accessories || []),
-    ].filter(Boolean);
+    const items = await api("/api/wardrobe", { method: "GET" });
 
-    if (all.length === 0) {
+    if (!items.length) {
       container.innerHTML =
-        "<div class='card'><p class='muted'>Nenhuma peça no guarda-roupa ainda.</p></div>";
+        "<div class='card'><p class='muted'>Nenhuma peça ainda. Envie uma foto acima pra começar.</p></div>";
       return;
     }
 
-    const itemsHtml = all
+    const itemsHtml = items
       .map(
         (item) => `
-          <div class="item-card">
-            <div class="item-type">${item.category}</div>
-            <div class="item-name">
-              <span class="color-dot" style="background:${cssColor(item.color)}"></span>
-              ${item.subcategory || item.category}
+          <div class="wardrobe-item">
+            <img class="wardrobe-thumb" src="${item.imageUrl}" alt="${item.category}" />
+            <div class="wardrobe-item-body">
+              <div class="item-type">${item.category}</div>
+              <div class="item-name">
+                <span class="color-dot" style="background:${cssColor(item.color)}"></span>
+                ${item.subcategory || item.category}
+              </div>
+              <div class="item-detail">${item.color}${item.fabric ? " · " + item.fabric : ""}</div>
             </div>
-            <div class="item-detail">${item.color}${item.fabric ? " · " + item.fabric : ""}</div>
+            <button class="btn-ghost wardrobe-del" data-id="${item.id}">Remover</button>
           </div>`,
       )
       .join("");
 
     container.innerHTML = `
       <div class="card">
-        <h3>Você tem ${all.length} peças nesse look</h3>
-        <p class="muted" style="margin-bottom:16px">
-          (esse é o guarda-roupa visualizado a partir de um look — adicionar/listar peças
-          completa virá em uma próxima versão)
-        </p>
-        <div class="items-grid">${itemsHtml}</div>
+        <h3>Você tem ${items.length} peça${items.length > 1 ? "s" : ""}</h3>
+        <div class="wardrobe-grid">${itemsHtml}</div>
       </div>
     `;
   } catch (err) {
     container.innerHTML = `<div class='card'><div class='error'>${err.message}</div></div>`;
+  }
+}
+
+async function removeWardrobeItem(id) {
+  if (!confirm("Remover esta peça do guarda-roupa?")) return;
+  try {
+    await api("/api/wardrobe/" + id, { method: "DELETE" });
+    loadWardrobe();
+  } catch (err) {
+    showWardrobeMsg(err.message, true);
   }
 }
 
@@ -461,6 +548,16 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-generate").addEventListener("click", generateOutfit);
   $("btn-packing").addEventListener("click", generatePacking);
   $("btn-refresh-wardrobe").addEventListener("click", loadWardrobe);
+
+  // Cadastro de peça por foto
+  $("wardrobe-photo").addEventListener("change", handlePhotoSelected);
+  $("btn-add-wardrobe").addEventListener("click", addWardrobeItem);
+
+  // Remover peça (delegação de evento — os botões são criados dinamicamente)
+  $("wardrobe-list").addEventListener("click", (e) => {
+    const delBtn = e.target.closest(".wardrobe-del");
+    if (delBtn) removeWardrobeItem(delBtn.dataset.id);
+  });
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
