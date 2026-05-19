@@ -76,7 +76,8 @@ async function register(name, email, password) {
     state.token = data.token;
     state.userId = data.id;
     state.userName = data.name;
-    enterApp();
+    // Conta nova → tela de onboarding para personalizar o estilo.
+    startOnboarding("register");
   } catch (err) {
     showError(err.message);
   }
@@ -99,6 +100,7 @@ function logout() {
   state.userId = null;
   state.userName = null;
   hide($("app-screen"));
+  hide($("onboarding-screen"));
   show($("login-screen"));
   showAuthView("login");
   $("email").value = "";
@@ -109,9 +111,93 @@ function logout() {
 
 function enterApp() {
   hide($("login-screen"));
+  hide($("onboarding-screen"));
   show($("app-screen"));
   $("user-name").textContent = state.userName;
   switchTab("outfit");
+}
+
+// ---------------------- Onboarding (perfil de estilo) ----------------------
+const COLOR_OPTIONS = [
+  "preto", "branco", "cinza", "grafite", "marinho", "azul",
+  "bege", "marrom", "verde", "vermelho", "rosa", "dourado",
+];
+
+function buildColorChips() {
+  ["ob-fav-colors", "ob-avoid-colors"].forEach((id) => {
+    const container = $(id);
+    if (!container || container.dataset.built) return;
+    container.innerHTML = COLOR_OPTIONS.map(
+      (c) =>
+        `<button type="button" class="chip chip-color" data-value="${c}">
+           <span class="chip-dot" style="background:${cssColor(c)}"></span>${c}
+         </button>`,
+    ).join("");
+    container.dataset.built = "1";
+  });
+}
+
+function setChips(containerId, values) {
+  const lower = (values || []).map((v) => String(v).toLowerCase());
+  document.querySelectorAll("#" + containerId + " .chip").forEach((chip) => {
+    chip.classList.toggle("selected", lower.includes(chip.dataset.value.toLowerCase()));
+  });
+}
+
+function getChips(containerId) {
+  return Array.from(
+    document.querySelectorAll("#" + containerId + " .chip.selected"),
+  ).map((c) => c.dataset.value);
+}
+
+function prefillOnboarding(profile) {
+  $("ob-bodytype").value = profile.bodyType || "retangulo";
+  setChips("ob-fits", profile.preferredFits || []);
+  const palette = profile.personalPalette || {};
+  setChips("ob-fav-colors", palette.primaryColors || []);
+  setChips("ob-avoid-colors", palette.avoidColors || []);
+  $("ob-budget").value = profile.budgetLimit ? profile.budgetLimit : "";
+}
+
+async function startOnboarding(origin) {
+  state.onboardingOrigin = origin;
+  buildColorChips();
+  hide($("login-screen"));
+  hide($("app-screen"));
+  hide($("onboarding-error"));
+  show($("onboarding-screen"));
+  $("btn-save-profile").disabled = false;
+  try {
+    const profile = await api("/api/profile", { method: "GET" });
+    prefillOnboarding(profile);
+  } catch (err) {
+    // Sem perfil ainda — mantém os padrões do formulário.
+  }
+}
+
+async function saveOnboarding() {
+  const body = {
+    bodyType: $("ob-bodytype").value,
+    favoriteColors: getChips("ob-fav-colors"),
+    avoidColors: getChips("ob-avoid-colors"),
+  };
+  const fits = getChips("ob-fits");
+  if (fits.length) body.preferredFits = fits;
+  const budget = parseFloat($("ob-budget").value);
+  if (!isNaN(budget) && budget >= 0) body.budgetLimit = budget;
+
+  const btn = $("btn-save-profile");
+  btn.disabled = true;
+  hide($("onboarding-error"));
+  try {
+    await api("/api/profile", { method: "PUT", body });
+    enterApp();
+  } catch (err) {
+    const el = $("onboarding-error");
+    el.textContent = err.message;
+    show(el);
+    btn.disabled = false;
+  }
 }
 
 // ---------------------- Tabs ----------------------
@@ -546,6 +632,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("btn-logout").addEventListener("click", logout);
   $("btn-generate").addEventListener("click", generateOutfit);
+
+  // Onboarding / perfil de estilo
+  buildColorChips();
+  $("btn-save-profile").addEventListener("click", saveOnboarding);
+  $("btn-skip-onboarding").addEventListener("click", enterApp);
+  $("btn-profile").addEventListener("click", () => startOnboarding("app"));
+  document.querySelectorAll(".chip-row").forEach((row) => {
+    row.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (chip) chip.classList.toggle("selected");
+    });
+  });
   $("btn-packing").addEventListener("click", generatePacking);
   $("btn-refresh-wardrobe").addEventListener("click", loadWardrobe);
 

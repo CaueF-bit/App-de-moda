@@ -15,6 +15,7 @@ import outfitRoutes from "./api/outfit.routes";
 import feedbackRoutes from "./api/feedback.routes";
 import packingRoutes from "./api/packing.routes";
 import wardrobeRoutes from "./api/wardrobe.routes";
+import profileRoutes from "./api/profile.routes";
 import adminRoutes from "./api/admin.routes";
 import devRoutes from "./api/dev.routes";
 
@@ -119,6 +120,7 @@ export function createServer() {
   app.use("/api", feedbackRoutes);
   app.use("/api", packingRoutes);
   app.use("/api", wardrobeRoutes);
+  app.use("/api", profileRoutes);
 
   // --- Rotas de seed/reset só em dev ---
   if (env.NODE_ENV !== "production") {

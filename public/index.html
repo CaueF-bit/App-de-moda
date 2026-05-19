@@ -66,6 +66,55 @@
     </div>
   </section>
 
+  <!-- ============ ONBOARDING (perfil de estilo) ============ -->
+  <section id="onboarding-screen" class="screen hidden">
+    <div class="card onboarding-card">
+      <span class="card-index">Nº 02</span>
+
+      <div class="masthead">
+        <span class="eyebrow">Atelier · Seu estilo</span>
+        <h1>Conte sobre <em>você</em></h1>
+        <p class="subtitle">Assim a IA monta looks com a sua cara. Leva 1 minuto.</p>
+      </div>
+
+      <div class="form">
+        <label>Tipo de corpo</label>
+        <select id="ob-bodytype">
+          <option value="retangulo">Retângulo — ombros e quadril alinhados</option>
+          <option value="triangulo">Triângulo — quadril mais largo</option>
+          <option value="triangulo_invertido">Triângulo invertido — ombros mais largos</option>
+          <option value="oval">Oval — volume no centro</option>
+          <option value="trapezio">Trapézio — atlético, ombros mais largos</option>
+        </select>
+
+        <label>Caimento preferido <span class="muted">— pode escolher vários</span></label>
+        <div class="chip-row" id="ob-fits">
+          <button type="button" class="chip" data-value="slim">Justo</button>
+          <button type="button" class="chip" data-value="regular">Regular</button>
+          <button type="button" class="chip" data-value="oversized">Solto</button>
+          <button type="button" class="chip" data-value="tailored">Alfaiataria</button>
+        </div>
+
+        <label>Cores favoritas</label>
+        <div class="chip-row" id="ob-fav-colors"></div>
+
+        <label>Cores que você evita</label>
+        <div class="chip-row" id="ob-avoid-colors"></div>
+
+        <label>Orçamento por peça em R$ <span class="muted">— opcional</span></label>
+        <input id="ob-budget" type="number" min="0" step="10" placeholder="ex: 300" />
+
+        <button id="btn-save-profile" class="btn-primary">Salvar e entrar</button>
+
+        <p class="switch-line">
+          <button type="button" id="btn-skip-onboarding" class="link-btn">Pular por enquanto</button>
+        </p>
+
+        <div id="onboarding-error" class="error hidden"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ APP ============ -->
   <section id="app-screen" class="screen hidden">
     <header class="topbar">
@@ -74,7 +123,10 @@
         <h2>Olá, <span id="user-name"></span></h2>
         <p class="muted">O que vamos criar hoje?</p>
       </div>
-      <button id="btn-logout" class="btn-ghost">Sair</button>
+      <div class="topbar-actions">
+        <button id="btn-profile" class="btn-ghost">Meu estilo</button>
+        <button id="btn-logout" class="btn-ghost">Sair</button>
+      </div>
     </header>
 
     <div class="tabs">

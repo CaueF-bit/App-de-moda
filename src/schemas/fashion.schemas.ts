@@ -116,3 +116,29 @@ export const updateWardrobeSchema = z
   });
 
 export type UpdateWardrobeInput = z.infer<typeof updateWardrobeSchema>;
+
+// ---------------------------------------------------------------------------
+//  Perfil de estilo do usuário — onboarding
+// ---------------------------------------------------------------------------
+
+export const bodyTypeSchema = z.enum([
+  "triangulo",
+  "triangulo_invertido",
+  "retangulo",
+  "oval",
+  "trapezio",
+]);
+
+export const updateProfileSchema = z
+  .object({
+    bodyType: bodyTypeSchema.optional(),
+    preferredFits: z.array(fitSchema).min(1, "Escolha ao menos um caimento").optional(),
+    favoriteColors: z.array(z.string().trim().min(1).max(30)).max(24).optional(),
+    avoidColors: z.array(z.string().trim().min(1).max(30)).max(24).optional(),
+    budgetLimit: z.number().nonnegative("O orçamento não pode ser negativo").max(1_000_000).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Informe ao menos um campo do perfil.",
+  });
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
