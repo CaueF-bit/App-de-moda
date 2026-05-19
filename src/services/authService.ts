@@ -2,6 +2,7 @@ import argon2 from "argon2";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { env } from "../config/env";
 import { createUser, findUserByEmail, findUserById } from "../db/user.repository";
+import { buildDefaultUserProfile, saveUserProfile } from "../db/userProfile.repository";
 import {
   ConflictError,
   UnauthorizedError,
@@ -78,6 +79,10 @@ export async function registerUser(input: {
     name: input.name,
     passwordHash,
   });
+
+  // Todo usuário novo já recebe um perfil padrão, para conseguir gerar
+  // looks e montar malas imediatamente após o cadastro.
+  await saveUserProfile(buildDefaultUserProfile(user.id));
 
   const token = signToken({ sub: user.id, email: user.email });
   return { id: user.id, email: user.email, name: user.name, token };

@@ -99,6 +99,42 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   return row ? rowToProfile(row as PrismaProfileRow) : null;
 }
 
+/**
+ * Perfil padrão criado automaticamente no cadastro, para que todo usuário
+ * novo já consiga gerar looks e montar malas sem travar. A tela de
+ * onboarding (próximo passo) vai permitir personalizar estes valores.
+ */
+export function buildDefaultUserProfile(userId: string): UserProfile {
+  return {
+    userId: userId.trim(),
+    bodyType: "retangulo",
+    measurements: {},
+    preferredFits: ["regular", "slim"],
+    personalPalette: {
+      primaryColors: ["preto", "branco", "cinza", "azul"],
+      secondaryColors: ["bege", "marinho", "verde"],
+      avoidColors: [],
+      contrastLevel: "medio",
+      undertone: "neutro",
+    },
+    dislikedPatterns: [],
+    favoriteCategories: [],
+    fragrancePreferences: [],
+    budgetLimit: 300,
+  };
+}
+
+/**
+ * Retorna o perfil do usuário, criando um perfil padrão se ainda não existir.
+ * Garante que nenhuma conta fique sem perfil (rede de segurança para contas
+ * antigas, criadas antes do perfil padrão automático no cadastro).
+ */
+export async function getOrCreateUserProfile(userId: string): Promise<UserProfile> {
+  const existing = await getUserProfile(userId);
+  if (existing) return existing;
+  return saveUserProfile(buildDefaultUserProfile(userId));
+}
+
 export async function updateUserProfile(
   userId: string,
   updates: Partial<UserProfile>,

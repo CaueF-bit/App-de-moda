@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUserProfile } from "../db/userProfile.repository";
+import { getOrCreateUserProfile } from "../db/userProfile.repository";
 import { listWardrobeItemsByUser } from "../db/wardrobe.repository";
 import { PackingInput, generatePackingList } from "../services/packingService";
 import { NotFoundError } from "../errors/AppError";
@@ -15,8 +15,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { userId, destination, durationDays, weather, plannedOccasions } = req.body;
 
-    const profile = await getUserProfile(userId);
-    if (!profile) throw new NotFoundError("Perfil do usuário não encontrado.");
+    const profile = await getOrCreateUserProfile(userId);
 
     const wardrobe = await listWardrobeItemsByUser(userId);
     if (wardrobe.length === 0) {

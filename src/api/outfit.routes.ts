@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUserProfile } from "../db/userProfile.repository";
+import { getOrCreateUserProfile } from "../db/userProfile.repository";
 import { listWardrobeItemsByUser } from "../db/wardrobe.repository";
 import { saveOutfit } from "../db/outfit.repository";
 import { generateContextualOutfit } from "../services/recommendationService";
@@ -40,8 +40,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { userId, occasion, vibe, weather } = req.body;
 
-    const profile = await getUserProfile(userId);
-    if (!profile) throw new NotFoundError("Perfil do usuário não encontrado.");
+    const profile = await getOrCreateUserProfile(userId);
 
     const wardrobe = await listWardrobeItemsByUser(userId);
     if (wardrobe.length === 0) {
