@@ -38,6 +38,10 @@ const envSchema = z.object({
     .default("false")
     .transform((value) => value.toLowerCase() === "true"),
 
+  // Chave secreta do painel de métricas (/admin.html).
+  // Vazia = painel desativado (nega qualquer acesso).
+  ADMIN_KEY: z.string().optional().default(""),
+
   CORS_ORIGIN: z.string().default("*"),
 
   RATE_LIMIT_WINDOW_MS: z

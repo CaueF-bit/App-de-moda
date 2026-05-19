@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a160e" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>App de Moda · Painel de métricas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap"
+  />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .admin-card { max-width: 720px; }
+    .metric-group { margin-top: 26px; }
+    .metric-group > h4 {
+      font-family: var(--sans);
+      font-size: 0.74rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 12px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .metric-cell {
+      background: var(--paper-hi);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      text-align: left;
+    }
+    .metric-number {
+      font-family: var(--serif);
+      font-size: 2.1rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .metric-label {
+      margin-top: 8px;
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+    }
+    .metric-sub {
+      margin-top: 3px;
+      font-size: 0.76rem;
+      color: var(--gold-deep);
+    }
+    .admin-actions { display: flex; gap: 10px; margin-top: 26px; }
+    .admin-actions .btn-secondary,
+    .admin-actions .btn-ghost { flex: 1; }
+    @media (max-width: 560px) {
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <section class="screen">
+    <div class="card admin-card">
+      <span class="card-index">Nº 00</span>
+
+      <div class="masthead">
+        <span class="eyebrow">Atelier · Painel privado</span>
+        <h1>Métricas</h1>
+        <p class="subtitle">Acompanhe o uso do app — só você vê isto.</p>
+      </div>
+
+      <!-- Porta de entrada -->
+      <div id="gate" class="form">
+        <label>Chave de acesso</label>
+        <input id="admin-key" type="password" placeholder="cole a sua chave de administrador" autocomplete="off" />
+        <button id="btn-enter" class="btn-primary">Entrar</button>
+        <div id="gate-error" class="error hidden"></div>
+      </div>
+
+      <!-- Painel -->
+      <div id="dashboard" class="hidden">
+        <div class="metric-group">
+          <h4>Visão geral</h4>
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <div class="metric-number" id="m-users">—</div>
+              <div class="metric-label">Usuários cadastrados</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-number" id="m-items">—</div>
+              <div class="metric-label">Peças no guarda-roupa</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-number" id="m-outfits">—</div>
+              <div class="metric-label">Looks gerados</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-group">
+          <h4>Engajamento</h4>
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <div class="metric-number" id="m-activated">—</div>
+              <div class="metric-label">Usuários ativados</div>
+              <div class="metric-sub" id="m-activation-rate"></div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-number" id="m-active7">—</div>
+              <div class="metric-label">Ativos nos últimos 7 dias</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-group">
+          <h4>Últimos 7 dias</h4>
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <div class="metric-number" id="m-signups7">—</div>
+              <div class="metric-label">Novos usuários</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-number" id="m-items7">—</div>
+              <div class="metric-label">Novas peças</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-number" id="m-outfits7">—</div>
+              <div class="metric-label">Novos looks</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="muted" id="updated-at" style="margin-top:20px;font-size:0.8rem"></p>
+
+        <div class="admin-actions">
+          <button id="btn-refresh" class="btn-secondary">Atualizar</button>
+          <button id="btn-forget" class="btn-ghost">Sair</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const STORAGE_KEY = "adm-moda-key";
+    const $ = (id) => document.getElementById(id);
+
+    function showError(msg) {
+      const el = $("gate-error");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    function fmt(n) {
+      return typeof n === "number" ? n.toLocaleString("pt-BR") : "—";
+    }
+
+    function render(data) {
+      $("m-users").textContent = fmt(data.totalUsers);
+      $("m-items").textContent = fmt(data.totalWardrobeItems);
+      $("m-outfits").textContent = fmt(data.totalOutfits);
+      $("m-activated").textContent = fmt(data.usersWithWardrobe);
+      $("m-activation-rate").textContent =
+        data.activationRate + "% dos usuários cadastraram peças";
+      $("m-active7").textContent = fmt(data.activeUsersLast7Days);
+      $("m-signups7").textContent = fmt(data.signupsLast7Days);
+      $("m-items7").textContent = fmt(data.wardrobeItemsLast7Days);
+      $("m-outfits7").textContent = fmt(data.outfitsLast7Days);
+      const when = new Date(data.generatedAt);
+      $("updated-at").textContent = "Atualizado em " + when.toLocaleString("pt-BR");
+    }
+
+    async function loadMetrics(key) {
+      const res = await fetch("/admin/metrics", {
+        headers: { "x-admin-key": key },
+      });
+      if (res.status === 401) {
+        throw new Error("Chave inválida. Confira e tente de novo.");
+      }
+      if (!res.ok) {
+        throw new Error("Erro ao carregar métricas (HTTP " + res.status + ").");
+      }
+      return res.json();
+    }
+
+    async function enter(key) {
+      try {
+        const data = await loadMetrics(key);
+        localStorage.setItem(STORAGE_KEY, key);
+        $("gate").classList.add("hidden");
+        $("dashboard").classList.remove("hidden");
+        render(data);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function refresh() {
+      const key = localStorage.getItem(STORAGE_KEY);
+      if (!key) return;
+      try {
+        render(await loadMetrics(key));
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function forget() {
+      localStorage.removeItem(STORAGE_KEY);
+      $("dashboard").classList.add("hidden");
+      $("gate").classList.remove("hidden");
+      $("admin-key").value = "";
+      $("gate-error").classList.add("hidden");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      $("btn-enter").addEventListener("click", () => {
+        const key = $("admin-key").value.trim();
+        if (!key) {
+          showError("Cole a sua chave de acesso.");
+          return;
+        }
+        enter(key);
+      });
+      $("admin-key").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btn-enter").click();
+      });
+      $("btn-refresh").addEventListener("click", refresh);
+      $("btn-forget").addEventListener("click", forget);
+
+      // Se a chave já foi salva antes, entra direto.
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) enter(saved);
+    });
+  </script>
+</body>
+</html>

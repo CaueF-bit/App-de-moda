@@ -15,6 +15,7 @@ import outfitRoutes from "./api/outfit.routes";
 import feedbackRoutes from "./api/feedback.routes";
 import packingRoutes from "./api/packing.routes";
 import wardrobeRoutes from "./api/wardrobe.routes";
+import adminRoutes from "./api/admin.routes";
 import devRoutes from "./api/dev.routes";
 
 /**
@@ -108,6 +109,9 @@ export function createServer() {
       return res.status(200).json({ ok: true, ...result });
     }),
   );
+
+  // --- Painel de métricas (protegido pela chave ADMIN_KEY, fora de /api) ---
+  app.use("/admin", adminRoutes);
 
   // --- API protegida (autenticação aplicada em cada router separado) ---
   app.use("/api", authenticate);
