@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getUserProfile } from "../db/userProfile.repository";
 import { listWardrobeItemsByUser } from "../db/wardrobe.repository";
-import { PackingInput, generateSmartPackingList } from "../services/packingService";
+import { PackingInput, generatePackingList } from "../services/packingService";
 import { NotFoundError } from "../errors/AppError";
 import { asyncHandler } from "../middleware/errorHandler";
 import { validate } from "../middleware/validate";
@@ -32,7 +32,7 @@ router.post(
       ...(plannedOccasions ? { plannedOccasions } : {}),
     };
 
-    const packingSuggestion = await generateSmartPackingList(input);
+    const packingSuggestion = await generatePackingList(input);
 
     return res.status(200).json({ success: true, packingSuggestion });
   }),

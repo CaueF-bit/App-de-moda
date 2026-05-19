@@ -1,3 +1,5 @@
+import { generatePackingWithAi, isAiAvailable } from "../ai/claudeClient";
+import { logger } from "../config/logger";
 import {
   ClothingCategory,
   PackingSuggestion,
@@ -21,6 +23,60 @@ const LOWER_CATEGORIES: ClothingCategory[] = ["calca", "bermuda", "shorts"];
 const LAYER_CATEGORIES: ClothingCategory[] = ["jaqueta", "blazer"];
 const SHOE_CATEGORIES: ClothingCategory[] = ["tenis", "sapato", "bota"];
 const ACCESSORY_CATEGORIES: ClothingCategory[] = ["acessorio", "perfume"];
+
+/**
+ * Monta a mala de viagem.
+ *
+ * Estratégia (mesma dos looks):
+ *  1. Se a IA estiver habilitada, o Claude escolhe as peças e escreve
+ *     recomendações específicas da viagem.
+ *  2. Em qualquer falha (ou se a IA não selecionar peças), cai no
+ *     montador heurístico — nunca quebra.
+ */
+export async function generatePackingList(
+  input: PackingInput,
+): Promise<PackingSuggestion> {
+  validatePackingInput(input);
+
+  if (isAiAvailable()) {
+    try {
+      const ai = await generatePackingWithAi(input.profile, input.wardrobe, {
+        destination: input.destination,
+        durationDays: input.durationDays,
+        weather: input.weather,
+        ...(input.plannedOccasions ? { plannedOccasions: input.plannedOccasions } : {}),
+      });
+
+      if (ai.selectedItems.length > 0) {
+        return {
+          destination: input.destination.trim(),
+          durationDays: input.durationDays,
+          weather: input.weather,
+          selectedItems: ai.selectedItems,
+          missingItems: ai.missingItems,
+          notes: ai.notes,
+          summary: buildSummary(ai.selectedItems),
+        };
+      }
+
+      logger.warn("IA da mala não retornou peças — usando montador heurístico");
+    } catch (err) {
+      logger.warn({ err }, "Falha na IA da mala — usando montador heurístico como fallback");
+    }
+  }
+
+  return generateSmartPackingList(input);
+}
+
+function buildSummary(items: WardrobeItem[]): PackingSuggestion["summary"] {
+  return {
+    uppers: countSelectedByCategories(items, UPPER_CATEGORIES),
+    lowers: countSelectedByCategories(items, LOWER_CATEGORIES),
+    layers: countSelectedByCategories(items, LAYER_CATEGORIES),
+    shoes: countSelectedByCategories(items, SHOE_CATEGORIES),
+    accessories: countSelectedByCategories(items, ACCESSORY_CATEGORIES),
+  };
+}
 
 export async function generateSmartPackingList(
   input: PackingInput,

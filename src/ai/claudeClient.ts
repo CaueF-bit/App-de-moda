@@ -207,3 +207,145 @@ export async function generateOutfitWithAi(
     );
   }
 }
+
+// ===========================================================================
+//  Mala de viagem por IA
+// ===========================================================================
+
+const PACKING_SYSTEM_PROMPT = `Você é um stylist especialista em montar malas de viagem.
+A partir do perfil do usuário, do guarda-roupa disponível e dos detalhes da viagem,
+escolha as peças que devem ir na mala e escreva recomendações práticas e específicas
+para ESTA viagem.
+
+Regras:
+- Use apenas peças que estão no guarda-roupa fornecido (pelos IDs).
+- Considere destino, duração, clima, ocasiões planejadas, paleta e caimento do usuário.
+- Priorize peças versáteis que combinam entre si (mais looks com menos peças).
+- As recomendações ("notes") devem ser específicas desta viagem — nada genérico.
+- Se faltar alguma categoria essencial, liste em "missingItems".
+- Responda EXCLUSIVAMENTE com um JSON válido no schema solicitado, sem markdown.`;
+
+interface AiPackingResponse {
+  itemIds?: string[];
+  notes?: string[];
+  missingItems?: { category: string; reason: string }[];
+}
+
+export interface PackingTripInput {
+  destination: string;
+  durationDays: number;
+  weather: string;
+  plannedOccasions?: string[];
+}
+
+export interface AiPackingResult {
+  selectedItems: WardrobeItem[];
+  notes: string[];
+  missingItems: { category: string; reason: string }[];
+}
+
+function buildPackingPrompt(
+  profile: UserProfile,
+  wardrobe: WardrobeItem[],
+  trip: PackingTripInput,
+): string {
+  return JSON.stringify(
+    {
+      task: "montar_mala_viagem",
+      trip: {
+        destination: trip.destination,
+        durationDays: trip.durationDays,
+        weather: trip.weather,
+        plannedOccasions: trip.plannedOccasions ?? [],
+      },
+      profile: {
+        bodyType: profile.bodyType,
+        preferredFits: profile.preferredFits,
+        personalPalette: profile.personalPalette,
+        dislikedPatterns: profile.dislikedPatterns,
+      },
+      wardrobe: wardrobe.map((item) => ({
+        id: item.id,
+        category: item.category,
+        subcategory: item.subcategory,
+        color: item.color,
+        secondaryColor: item.secondaryColor,
+        pattern: item.pattern,
+        fabric: item.fabric,
+        idealSeason: item.idealSeason,
+        fit: item.fit,
+        formality: item.formality,
+        tags: item.tags,
+      })),
+      output_schema: {
+        itemIds: "array com os ids das peças que devem ir na mala",
+        notes: "array de 3 a 5 strings em pt-BR com recomendações específicas desta viagem",
+        missingItems: "array de {category, reason} com categorias que faltam, ou []",
+      },
+    },
+    null,
+    2,
+  );
+}
+
+export async function generatePackingWithAi(
+  profile: UserProfile,
+  wardrobe: WardrobeItem[],
+  trip: PackingTripInput,
+): Promise<AiPackingResult> {
+  if (!isAiAvailable()) {
+    throw new ExternalServiceError(
+      "IA não configurada (defina ANTHROPIC_API_KEY e AI_ENABLED=true).",
+    );
+  }
+
+  const wardrobeById = new Map(wardrobe.map((item) => [item.id, item]));
+
+  try {
+    const response = await getClient().messages.create({
+      model: env.ANTHROPIC_MODEL,
+      max_tokens: 1024,
+      system: PACKING_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: buildPackingPrompt(profile, wardrobe, trip),
+        },
+      ],
+    });
+
+    const textBlock = response.content.find((c) => c.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("Resposta da IA sem conteúdo de texto");
+    }
+
+    const parsed = extractJson(textBlock.text) as AiPackingResponse;
+
+    const selectedItems = (parsed.itemIds ?? [])
+      .map((id) => wardrobeById.get(id))
+      .filter((item): item is WardrobeItem => Boolean(item));
+
+    const notes = Array.isArray(parsed.notes)
+      ? parsed.notes.filter((n): n is string => typeof n === "string" && n.trim().length > 0)
+      : [];
+
+    const missingItems = Array.isArray(parsed.missingItems)
+      ? parsed.missingItems
+          .filter((m) => m && typeof m.category === "string" && typeof m.reason === "string")
+          .map((m) => ({ category: m.category, reason: m.reason }))
+      : [];
+
+    logger.info(
+      { tokensIn: response.usage.input_tokens, tokensOut: response.usage.output_tokens },
+      "Mala de viagem gerada por Claude",
+    );
+
+    return { selectedItems, notes, missingItems };
+  } catch (err) {
+    logger.error({ err }, "Falha ao montar mala com Claude");
+    throw new ExternalServiceError(
+      "Não foi possível montar a mala com IA agora.",
+      err instanceof Error ? err.message : undefined,
+    );
+  }
+}
