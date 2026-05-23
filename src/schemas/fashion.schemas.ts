@@ -142,3 +142,13 @@ export const updateProfileSchema = z
   });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const analyzeBodySchema = z.object({
+  image: z
+    .string()
+    .trim()
+    .min(1, "A foto é obrigatória")
+    .regex(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i, "Formato de imagem inválido"),
+});
+
+export type AnalyzeBodyInput = z.infer<typeof analyzeBodySchema>;

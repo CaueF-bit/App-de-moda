@@ -8,6 +8,7 @@ const state = {
   userId: null,
   userName: null,
   pendingPhoto: null,
+  bodyPhoto: null,
 };
 
 // ---------------------- Helpers ----------------------
@@ -161,10 +162,14 @@ function prefillOnboarding(profile) {
 
 async function startOnboarding(origin) {
   state.onboardingOrigin = origin;
+  state.bodyPhoto = null;
   buildColorChips();
   hide($("login-screen"));
   hide($("app-screen"));
   hide($("onboarding-error"));
+  hide($("ob-body-msg"));
+  $("ob-body-photo").value = "";
+  $("btn-detect-body").disabled = true;
   show($("onboarding-screen"));
   $("btn-save-profile").disabled = false;
   try {
@@ -172,6 +177,70 @@ async function startOnboarding(origin) {
     prefillOnboarding(profile);
   } catch (err) {
     // Sem perfil ainda — mantém os padrões do formulário.
+  }
+}
+
+// Detecção do tipo de corpo pela foto (IA de visão).
+const BODY_TYPE_LABELS = {
+  retangulo: "Retângulo",
+  triangulo: "Triângulo",
+  triangulo_invertido: "Triângulo invertido",
+  oval: "Oval",
+  trapezio: "Trapézio",
+};
+
+function bodyMsg(text, isError) {
+  const el = $("ob-body-msg");
+  el.textContent = text;
+  el.classList.toggle("error", !!isError);
+  show(el);
+}
+
+async function handleBodyPhoto(e) {
+  const file = e.target.files && e.target.files[0];
+  const btn = $("btn-detect-body");
+  hide($("ob-body-msg"));
+  if (!file) {
+    state.bodyPhoto = null;
+    btn.disabled = true;
+    return;
+  }
+  try {
+    state.bodyPhoto = await resizeImage(file);
+    btn.disabled = false;
+  } catch (err) {
+    state.bodyPhoto = null;
+    btn.disabled = true;
+    bodyMsg(err.message, true);
+  }
+}
+
+async function detectBodyType() {
+  if (!state.bodyPhoto) return;
+  const btn = $("btn-detect-body");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Analisando...";
+  try {
+    const r = await api("/api/profile/analyze-body", {
+      method: "POST",
+      body: { image: state.bodyPhoto },
+    });
+    if (r.bodyType) {
+      $("ob-bodytype").value = r.bodyType;
+      const label = BODY_TYPE_LABELS[r.bodyType] || r.bodyType;
+      bodyMsg("Identificamos: " + label + (r.explanation ? " — " + r.explanation : ""), false);
+    } else {
+      bodyMsg(
+        "Não consegui identificar pela foto — escolha manualmente acima. " + (r.explanation || ""),
+        true,
+      );
+    }
+  } catch (err) {
+    bodyMsg(err.message, true);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
   }
 }
 
@@ -638,6 +707,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-save-profile").addEventListener("click", saveOnboarding);
   $("btn-skip-onboarding").addEventListener("click", enterApp);
   $("btn-profile").addEventListener("click", () => startOnboarding("app"));
+  $("ob-body-photo").addEventListener("change", handleBodyPhoto);
+  $("btn-detect-body").addEventListener("click", detectBodyType);
   document.querySelectorAll(".chip-row").forEach((row) => {
     row.addEventListener("click", (e) => {
       const chip = e.target.closest(".chip");

@@ -87,6 +87,15 @@
           <option value="trapezio">Trapézio — atlético, ombros mais largos</option>
         </select>
 
+        <p class="muted body-hint">Não sabe? Envie uma foto de corpo inteiro e a IA descobre:</p>
+        <div class="body-detect">
+          <input id="ob-body-photo" type="file" accept="image/*" />
+          <button type="button" id="btn-detect-body" class="btn-secondary" disabled>
+            Detectar com IA
+          </button>
+        </div>
+        <div id="ob-body-msg" class="wardrobe-msg hidden"></div>
+
         <label>Caimento preferido <span class="muted">— pode escolher vários</span></label>
         <div class="chip-row" id="ob-fits">
           <button type="button" class="chip" data-value="slim">Justo</button>

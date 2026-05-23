@@ -179,3 +179,104 @@ function normalizeVisionResult(raw: Record<string, unknown>): ClothingVisionResu
 
   return { item, confidence };
 }
+
+// ===========================================================================
+//  Detecção do tipo de corpo por foto
+// ===========================================================================
+
+const VALID_BODY_TYPES = [
+  "triangulo",
+  "triangulo_invertido",
+  "retangulo",
+  "oval",
+  "trapezio",
+] as const;
+
+export type BodyTypeGuess = (typeof VALID_BODY_TYPES)[number];
+
+export interface BodyTypeResult {
+  bodyType: BodyTypeGuess | null;
+  explanation: string;
+  confidence: number;
+}
+
+const BODY_SYSTEM_PROMPT = `Você é um consultor de imagem e styling. A partir de uma foto,
+classifique o formato corporal da pessoa em uma das 5 categorias usadas em moda, com o
+único objetivo de recomendar roupas. Seja respeitoso, objetivo e neutro.
+Responda EXCLUSIVAMENTE com JSON válido, sem markdown.`;
+
+const BODY_USER_PROMPT = `Observe a silhueta da pessoa na foto e classifique em UMA categoria:
+- "triangulo": quadril mais largo que os ombros
+- "triangulo_invertido": ombros mais largos que o quadril
+- "retangulo": ombros, cintura e quadril em larguras parecidas
+- "oval": volume concentrado na região central do corpo
+- "trapezio": ombros levemente mais largos, silhueta atlética/equilibrada
+
+Responda com este JSON:
+{
+  "bodyType": "uma das 5 categorias acima, ou null se não der pra avaliar",
+  "explanation": "1 frase curta e gentil em pt-BR explicando a escolha",
+  "confidence": "número entre 0 e 1"
+}
+Se não houver uma pessoa de corpo visível, use bodyType null e confidence baixo.`;
+
+export async function analyzeBodyType(
+  mediaType: string,
+  base64Data: string,
+): Promise<BodyTypeResult> {
+  if (!isAiAvailable()) {
+    throw new ExternalServiceError(
+      "IA de visão não configurada (defina ANTHROPIC_API_KEY e AI_ENABLED=true).",
+    );
+  }
+
+  try {
+    const response = await getAnthropicClient().messages.create({
+      model: env.ANTHROPIC_MODEL,
+      max_tokens: 512,
+      system: BODY_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as SupportedMediaType,
+                data: base64Data,
+              },
+            },
+            { type: "text", text: BODY_USER_PROMPT },
+          ],
+        },
+      ],
+    });
+
+    const textBlock = response.content.find((c) => c.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("Resposta da IA sem conteúdo de texto.");
+    }
+
+    logger.info(
+      { tokensIn: response.usage.input_tokens, tokensOut: response.usage.output_tokens },
+      "Tipo de corpo analisado por Claude",
+    );
+
+    const raw = extractJson(textBlock.text);
+    const bodyType = (VALID_BODY_TYPES as readonly string[]).includes(String(raw.bodyType))
+      ? (String(raw.bodyType) as BodyTypeGuess)
+      : null;
+    const explanation = typeof raw.explanation === "string" ? raw.explanation.trim() : "";
+    const confidence =
+      typeof raw.confidence === "number" ? Math.max(0, Math.min(1, raw.confidence)) : 0.6;
+
+    return { bodyType, explanation, confidence };
+  } catch (err) {
+    logger.error({ err }, "Falha ao analisar tipo de corpo com Claude");
+    throw new ExternalServiceError(
+      "Não foi possível analisar a foto agora.",
+      err instanceof Error ? err.message : undefined,
+    );
+  }
+}
